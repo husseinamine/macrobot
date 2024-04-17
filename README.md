@@ -1,2 +1,2 @@
 # naqalbot
-naqal's local website (arab robots competition 2024)
+naqal's source code (arab robots competition 2024)
