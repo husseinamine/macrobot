@@ -16,7 +16,7 @@ void setup() {
 void loop() {
   webserver.handleClient();
 
-  /*testing*/
+  /* testing */
   radio_packet packet = radio_packet{
     cmd: MOVE, 
     data: 1
@@ -25,7 +25,7 @@ void loop() {
   radio_send(&packet);
 
   delay(1000);
-  /*testing*/
+  /* testing */
 }
 
 void webserver_setup() {
