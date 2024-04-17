@@ -1,4 +1,4 @@
-#include "intercom.ino"
+#include "intercom.cpp"
 
 void radio_server_setup();
 

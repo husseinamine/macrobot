@@ -1,8 +1,11 @@
 #include <RF24.h>
+#include "mutex.h"
 
 RF24 radio(2, 4); // CE, CSE pins
 
 const byte* RADIO_ADDRS[] = {"0001", "0002"};
+
+Mutex mutex;
 
 struct radio_packet {
     int cmd;
@@ -24,19 +27,23 @@ void radio_client_setup() {
 }
 
 void radio_send(radio_packet *packet) {
+  mutex.lock();
   radio.write(packet, sizeof(packet));
+  delay(5);
+  mutex.unlock();
 }
 
 int radio_recv(radio_packet *packet) {
-  delay(5);
+  mutex.lock();
   radio.startListening();
 
   unsigned long now = millis();
   while (!radio.available() && millis()-now < 5000) return -1; // wait for message (5s timeout)
   radio.read(packet, sizeof(packet));
 
-  delay(5);
   radio.stopListening();
+  delay(5);
+  mutex.unlock();
 
   return 0;
 }
