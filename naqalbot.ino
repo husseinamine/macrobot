@@ -54,20 +54,26 @@ void webserver_setup() {
 }
 
 void loop() {
+  server.handleClient();
+  move_robot();
+
+  Serial.print("ZROT: ");
+  Serial.println(zRot);
+
+  delay(50);
+}
+
+void move_robot() {
   sensors_event_t a, g, temp; // get accelerometer & gyro data
   mpu.getEvent(&a, &g, &temp);
 
   previousTime = currentTime;
   currentTime = millis();
   elapsedTime = (currentTime - previousTime) / 1000;
-  zRot += g.gyro.z * elapsedTime;
-  
-  server.handleClient();
 
-  Serial.print("ZROT: ");
-  Serial.println(zRot);
-
-  delay(200);
+  if (abs(g.gyro.z) > 0.01) { // to not add false readings
+    zRot += g.gyro.z * elapsedTime;
+  }
 }
 
 void handleHome() {
