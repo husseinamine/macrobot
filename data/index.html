@@ -3,18 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/public/style.css">
-    <title>naqal - نقال</title>
+    <style>
+        @font-face {
+            font-family: introcond;
+            src: url(/introcond.otf);
+        }
+
+        body {
+            background-color:lightblue;
+            color: #000000;
+            font-family: introcond;
+        }
+
+        .centered {
+            margin: auto;
+            width: 50%;
+
+            text-align: center;
+        }
+        .arrows {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+          row-gap: 50px;
+          column-gap: 0px;
+          justify-content: center;
+          align-items: center;
+          place-items: center;
+          margin-top: 20%;
+        }
+
+        /* arrows */
+        .right {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .up {
+            grid-column: 2;
+            grid-row: 1;
+            align-items: center;
+        }
+
+        .left {
+            grid-column: 3;
+            grid-row: 2;
+            align-items: center;
+        }
+
+        .down {
+            grid-column: 2;
+            grid-row: 3;
+            align-items: center;
+        }
+
+        .center {
+            grid-column: 2;
+            grid-row: 2;
+            align-items: center;
+        }
+      
+        /* Style for the arrows */
+        .svg-icon {
+            padding: 5px;
+            background-color: rgb(255, 255, 255);
+            width: 100%; 
+            height: auto; 
+            max-width: 50px;
+            max-height: 50px;
+            border-radius: 14px;
+        }
+      
+        /* Rotate arrows as needed */
+        .rotate-up {
+            transform: rotate(-90deg);
+        }
+      
+        .rotate-down {
+            transform: rotate(90deg);
+        }
+      
+        .rotate-left {
+            transform: rotate(180deg);
+        }
+
+        button {
+            background-color: #1d46cb71;
+            border-style: none;
+            border-radius: 12.5px;
+            padding: 4px;
+        }
+
+        .controls {
+            margin-top: 50px;
+            justify-content: center;
+            align-items: center;
+            place-items: center;
+        }
+
+        .control {
+            padding: 5px 15px;
+            border-radius: 8px;
+            font-size: larger;
+            font-weight: bold;
+            border-style: solid;
+            border-width: 4px;
+            border-color: rgba(240, 248, 255, 0.4);
+        }
+
+        #start {
+            background-color: rgb(76, 221, 32);
+            color: whitesmoke;
+            margin-right: 20px;
+        }
+
+        #stop {
+            background-color: rgb(221, 32, 32);
+            color: whitesmoke;
+            margin-left: 20px;
+        }
+
+        .disabled {
+            background-color: rgb(105, 105, 105);
+            color: whitesmoke;
+            margin-left: 20px;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .centered {
+                width: 80%;
+            }
+        }
+
+        @media only screen and (min-width: 600px) {
+            .arrows {
+                margin-top: 5%;
+                margin-right: 20%;
+                margin-left: 20%;
+            }
+        }
+
+        @media only screen and (min-width: 1000px) {
+            .arrows {
+                margin-right: 35%;
+                margin-left: 35%;
+            }
+        }
+    </style>
+    <title>MACROBOT</title>
 </head>
 <body>
-    <h1 class="title centered">Hello! I Am Naqal</h1>
-    <div class="nav centered">
-        <a href="/">Paths</a>
-        <a href="/new">New</a>
-        <a href="/current">Current?</a>
+    <h1 class="title centered">MacroBot</h1>
+    <div class="arrows">
+        <!-- Up arrow -->
+        <button id="forward" class="up"><img src="/arrow.svg" alt="Up" class="svg-icon rotate-up"></button>
+        <!-- Right arrow -->
+        <button id="turn-right" class="left"><img src="/arrow.svg" alt="Right" class="svg-icon"></button>
+        <!-- Left arrow -->
+        <button id="turn-left" class="right"><img src="/arrow.svg" alt="Left" class="svg-icon rotate-left"></button>
+        <!-- Down arrow -->
+        <button id="backward" class="down"><img src="/arrow.svg" alt="Down" class="svg-icon rotate-down"></button>
     </div>
-    <div id="path-list centered">
-        <div class="path-list-item"></div>
+    <div class="centered controls">
+        <button id="start" class="control">START</button>
+        <button id="stop" class="control disabled">STOP</button>
     </div>
+    <script>
+        const sendToServer = (commandState) => {
+            const serverUrl = `http://192.168.4.1/${commandState}`
+
+            fetch(serverUrl)
+            .then(response => {
+                if (!response.ok) {
+                throw new Error('Network response was not ok')
+                }
+                return response.text()
+            })
+            .then(data => {
+                console.log('Response from server:', data)
+            })
+            .catch(error => {
+                console.error('Error sending command:', error)
+            }) // dev
+        }
+
+        const addCommandListener = (command) => {
+            document.getElementById(command).addEventListener('touchstart', e => {
+                document.getElementById(command).style = `padding: 0px`
+                sendToServer(`start?command=${command}`)
+            })
+            document.getElementById(command).addEventListener('touchend', e => {
+                document.getElementById(command).style = `padding: 4px`
+                sendToServer(`end`)
+            })
+            document.getElementById(command).addEventListener('mousedown', e => {
+                document.getElementById(command).style = `padding: 0px`
+                sendToServer(`start?command=${command}`)
+            })
+            document.getElementById(command).addEventListener('mouseup', e => {
+                document.getElementById(command).style = `padding: 4px`
+                sendToServer(`end`)
+            })
+        }
+
+        const addControlListener = (control, fs, fe) => {
+            document.getElementById(control).addEventListener('touchstart', e => {
+                if (window.localStorage.getItem(`${control}-style`) != null) return
+                document.getElementById(command).style = `border-width: 0px`
+                if (fs != null) {fs()}
+            })
+            document.getElementById(control).addEventListener('touchend', e => {
+                if (window.localStorage.getItem(`${control}-style`) != null) return
+                document.getElementById(control).style = `border-width: 4px`
+                if (fe != null) {fe()}
+            })
+            document.getElementById(control).addEventListener('mousedown', e => {
+                if (window.localStorage.getItem(`${control}-style`) != null) return
+                document.getElementById(control).style = `border-width: 0px`
+                if (fs != null) {fs()}
+            })
+            document.getElementById(control).addEventListener('mouseup', e => {
+                if (window.localStorage.getItem(`${control}-style`) != null) return
+                document.getElementById(control).style = `border-width: 4px`
+                if (fe != null) {fe()}
+            })
+        }
+
+        let styles = {}
+        const setDisabled = (control) => {
+            window.localStorage.setItem(`${control}-style`, document.getElementById(control).style.all)
+            document.getElementById(control).style = "background-color: rgb(105, 105, 105);color: whitesmoke;margin-left: 20px;"
+        }
+
+        const setEnabled = (control) => {
+            document.getElementById(control).style = window.localStorage.getItem(`${control}-style`, document.getElementById(control).style.all)
+            window.localStorage.removeItem(`${control}-style`)
+        }
+
+        addCommandListener("forward")
+        addCommandListener("turn-right")
+        addCommandListener("turn-left")
+        addCommandListener("backward")
+
+        addControlListener("start", null, () => {
+            window.localStorage.setItem("tempPath", [])
+            setDisabled("start")
+            setEnabled("stop")
+        })
+        addControlListener("stop", null, () => {
+            //.....SAVE PATH THEN....
+            window.localStorage.removeItem("tempPath")
+            setDisabled("stop")
+            setEnabled("start")
+        })
+        setDisabled("stop")
+
+        if (!!window.EventSource) {
+            var source = new EventSource('/events');
+
+            source.addEventListener('open', function(e) {
+                console.log("Events Connected")
+            }, false);
+
+            source.addEventListener('error', function(e) {
+                if (e.target.readyState != EventSource.OPEN) {
+                console.log("Events Disconnected")
+                }
+            }, false);
+
+            source.addEventListener('blocked', function(e) {
+                console.log("blocked: ", e.data)
+            }, false);
+        }
+    </script>
 </body>
 </html>
