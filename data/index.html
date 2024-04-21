@@ -123,10 +123,37 @@
             margin-left: 20px;
         }
 
-        .disabled {
-            background-color: rgb(105, 105, 105);
+        #macros {
+            margin-top: 35px;
+        }
+
+        .macro {
+            width: 100px;
+            height: 100px;
+            background-color: rgba(0, 0, 0, 0.472);
+            border-radius: 6px;
+        }
+
+        .macro-start {
+            padding: 9px 9px;
+            border-radius: 8px;
+            border-style: solid;
+            border-width: 4px;
+            margin-left: 10px;
+            border-color: rgba(240, 248, 255, 0.4);
+            background-color: rgb(76, 221, 32);
             color: whitesmoke;
-            margin-left: 20px;
+        }
+
+        .macro-del {
+            padding: 9px 9px;
+            border-radius: 8px;
+            border-style: solid;
+            border-width: 4px;
+            margin-left: 10px;
+            border-color: rgba(240, 248, 255, 0.4);
+            background-color: rgb(221, 32, 32);
+            color: whitesmoke;
         }
 
         @media only screen and (max-width: 600px) {
@@ -166,7 +193,14 @@
     </div>
     <div class="centered controls">
         <button id="start" class="control">START</button>
-        <button id="stop" class="control disabled">STOP</button>
+        <button id="stop" class="control">STOP</button>
+    </div>
+    <div id="macros">
+        <div class="macro">
+            <h1 style="color: white;padding-left: 15px;padding-top: 7.5px;">ma1</h1>
+            <button class="macro-start"></button>
+            <button class="macro-del "></button>
+        </div>
     </div>
     <script>
         const sendToServer = (commandState) => {
@@ -246,13 +280,13 @@
         addCommandListener("backward")
 
         addControlListener("start", null, () => {
-            window.localStorage.setItem("tempPath", [])
+            window.localStorage.setItem("tempMacro", [])
             setDisabled("start")
             setEnabled("stop")
         })
         addControlListener("stop", null, () => {
             //.....SAVE PATH THEN....
-            window.localStorage.removeItem("tempPath")
+            window.localStorage.removeItem("tempMacro")
             setDisabled("stop")
             setEnabled("start")
         })
