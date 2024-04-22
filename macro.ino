@@ -9,6 +9,7 @@
 #include "motor.h"
 
 AsyncWebServer *server;
+AsyncWebSocket ws("/ws");
 // AsyncEventSource events("/events");
 
 float previousTime, currentTime, elapsedTime;
@@ -27,10 +28,43 @@ void setupAdminUploadHandler() {
   }, handleUpload);
 }
 
+void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+  AwsFrameInfo *info = (AwsFrameInfo*)arg;
+  if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+    data[len] = 0;
+
+    stop();
+    if (strcmp((char*)data, "forward") == 0) {
+      move_fwd();
+    } else if (strcmp((char*)data, "backward") == 0) {
+      move_bwd();
+    } else if (strcmp((char*)data, "turn-right") == 0) {
+      turn_right();
+    } else if (strcmp((char*)data, "turn-left") == 0) {
+      turn_left();
+    }
+  }
+}
+
+void eventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+  switch (type) {
+    case WS_EVT_CONNECT:
+      Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+      break;
+    case WS_EVT_DISCONNECT:
+      Serial.printf("WebSocket client #%u disconnected\n", client->id());
+      break;
+    case WS_EVT_DATA:
+      handleWebSocketMessage(arg, data, len);
+      break;
+    case WS_EVT_PONG:
+    case WS_EVT_ERROR:
+      break;
+  }
+}
+
 void setup() {
   Serial.begin(9600);
-  while (!Serial)
-    delay(10);
 
   pinMode(IN1, OUTPUT); // motors
   pinMode(IN2, OUTPUT);
@@ -45,43 +79,10 @@ void setup() {
 
   server->serveStatic("/", SPIFFS, "/").setDefaultFile("index.html"); 
 
-  server->on("/start", [](AsyncWebServerRequest *request){
-    if (!(request->hasParam("command"))) {
-      request->send(500, "text/plain", "bad");
-    }
-
-    String command = request->getParam("command")->value();
-    Serial.println(command);
-    if (command.startsWith("forward")) {
-      Serial.println("forward start");
-      move_fwd();
-    } else if (command.startsWith("backward")) {
-      move_bwd();
-    } else if (command.startsWith("turn-right")) {
-      turn_right();
-    } else if (command.startsWith("turn-left")) {
-      turn_left();
-    }
-
-    request->send(200, "text/plain", "ok");
-  });
-
-  server->on("/end", [](AsyncWebServerRequest *request){
-    stop();
-    request->send(200, "text/plain", "ok");
-  });
+  ws.onEvent(eventHandler);
+  server->addHandler(&ws);
 
   server->begin();
-
-  // events.onConnect([](AsyncEventSourceClient *client){
-  //   if(client->lastId()){
-  //     Serial.printf("Client reconnected! Last message ID that it gat is: %u\n", client->lastId());
-  //   }
-  //   //send event with message "hello!", id current millis
-  //   // and set reconnect delay to 1 second
-  //   client->send("hello!",NULL,millis(),1000);
-  // });
-  // server.addHandler(&events);
 }
 
 
@@ -101,8 +102,6 @@ void setupUpload() {
 
   Serial.println("Mounting SPIFFS ...");
   if (!SPIFFS.begin(true)) {
-    // if you have not used SPIFFS before on a ESP32, it will show this error.
-    // after a reboot SPIFFS will be configured and will happily work.
     Serial.println("ERROR: Cannot mount SPIFFS, Rebooting");
     rebootESP("ERROR: Cannot mount SPIFFS, Rebooting");
   }

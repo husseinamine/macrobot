@@ -13,6 +13,9 @@
             background-color:lightblue;
             color: #000000;
             font-family: introcond;
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         .centered {
@@ -176,6 +179,10 @@
                 margin-left: 35%;
             }
         }
+
+        img {
+            pointer-events: none; 
+        }
     </style>
     <title>MACROBOT</title>
 </head>
@@ -183,13 +190,13 @@
     <h1 class="title centered">MacroBot</h1>
     <div class="arrows">
         <!-- Up arrow -->
-        <button id="forward" class="up"><img src="/arrow.svg" alt="Up" class="svg-icon rotate-up"></button>
+        <button id="forward" class="up"><img src="/arrow.svg" unselectable="on" alt="Up" class="svg-icon rotate-up"></button>
         <!-- Right arrow -->
-        <button id="turn-right" class="left"><img src="/arrow.svg" alt="Right" class="svg-icon"></button>
+        <button id="turn-left" class="left"><img src="/arrow.svg" unselectable="on" alt="Right" class="svg-icon"></button>
         <!-- Left arrow -->
-        <button id="turn-left" class="right"><img src="/arrow.svg" alt="Left" class="svg-icon rotate-left"></button>
+        <button id="turn-right" class="right"><img src="/arrow.svg" unselectable="on" alt="Left" class="svg-icon rotate-left"></button>
         <!-- Down arrow -->
-        <button id="backward" class="down"><img src="/arrow.svg" alt="Down" class="svg-icon rotate-down"></button>
+        <button id="backward" class="down"><img src="/arrow.svg" unselectable="on" alt="Down" class="svg-icon rotate-down"></button>
     </div>
     <div class="centered controls">
         <button id="start" class="control">START</button>
@@ -203,64 +210,123 @@
         </div>
     </div>
     <script>
-        const sendToServer = (commandState) => {
-            const serverUrl = `http://192.168.4.1/${commandState}`
+        window.addEventListener('load', function() {
+        if (!!window.EventSource) {
+            var source = new EventSource('/events');
 
-            fetch(serverUrl)
-            .then(response => {
-                if (!response.ok) {
-                throw new Error('Network response was not ok')
+            source.addEventListener('open', function(e) {
+                console.log("Events Connected")
+            }, false);
+
+            source.addEventListener('error', function(e) {
+                if (e.target.readyState != EventSource.OPEN) {
+                console.log("Events Disconnected")
                 }
-                return response.text()
-            })
-            .then(data => {
-                console.log('Response from server:', data)
-            })
-            .catch(error => {
-                console.error('Error sending command:', error)
-            }) // dev
+            }, false);
+
+            source.addEventListener('blocked', function(e) {
+                console.log("blocked: ", e.data)
+            }, false);
         }
 
+        var websocket = new WebSocket(`ws://${window.location.hostname}/ws`);
+        websocket.onopen = function(event) {
+        console.log('Connection established');
+        }
+        websocket.onclose = function(event) {
+        console.log('Connection died');
+        }
+        websocket.onerror = function(error) {
+        console.log('error');
+        };
+        websocket.onmessage = function(event) {
+        if (event.data == "1") {
+            document.getElementById('state').innerHTML = "ON";
+            document.getElementById('toggle-btn').checked = true;
+        }
+        else {
+            document.getElementById('state').innerHTML = "OFF";
+            document.getElementById('toggle-btn').checked = false;
+        }
+        };
+        
+        const sendToServer = (command) => {
+            // const serverUrl = `http://192.168.4.1/${commandState}`
+
+            // fetch(serverUrl)
+            // .then(response => {
+            //     if (!response.ok) {
+            //     throw new Error('Network response was not ok')
+            //     }
+            //     return response.text()
+            // })
+            // .then(data => {
+            //     console.log('Response from server:', data)
+            // })
+            // .catch(error => {
+            //     console.error('Error sending command:', error)
+            // }) // dev
+            console.log(command)
+            websocket.send('end')
+            websocket.send(command)
+        }
+
+        const commands = ["forward", "backward", "turn-right", "turn-left"]
         const addCommandListener = (command) => {
-            document.getElementById(command).addEventListener('touchstart', e => {
+            const start = (e) =>  {
+                if (document.getElementById(command).style.backgroundColor == "rgb(105, 105, 105)") return
                 document.getElementById(command).style = `padding: 0px`
-                sendToServer(`start?command=${command}`)
-            })
-            document.getElementById(command).addEventListener('touchend', e => {
+                sendToServer(`${command}`)
+
+                commands.forEach(c => {
+                    if (command != c) {
+                        setDisabled(c)
+                    }
+                })
+            }
+            
+            const end = (e) => {
                 document.getElementById(command).style = `padding: 4px`
                 sendToServer(`end`)
-            })
-            document.getElementById(command).addEventListener('mousedown', e => {
-                document.getElementById(command).style = `padding: 0px`
-                sendToServer(`start?command=${command}`)
-            })
-            document.getElementById(command).addEventListener('mouseup', e => {
-                document.getElementById(command).style = `padding: 4px`
-                sendToServer(`end`)
-            })
+                commands.forEach(c => {
+                    if (command != c) {
+                        setEnabled(c)
+                    }
+                })
+            }
+            if (window.navigator.platform != "Win32") {
+                document.getElementById(command).addEventListener('touchstart', start)
+                document.getElementById(command).addEventListener('touchend', end)
+            } else {
+                document.getElementById(command).addEventListener('mousedown', start)
+                document.getElementById(command).addEventListener('mouseup', end)
+            }
         }
 
         const addControlListener = (control, fs, fe) => {
-            document.getElementById(control).addEventListener('touchstart', e => {
-                if (window.localStorage.getItem(`${control}-style`) != null) return
-                document.getElementById(command).style = `border-width: 0px`
-                if (fs != null) {fs()}
-            })
-            document.getElementById(control).addEventListener('touchend', e => {
-                if (window.localStorage.getItem(`${control}-style`) != null) return
-                document.getElementById(control).style = `border-width: 4px`
-                if (fe != null) {fe()}
-            })
-            document.getElementById(control).addEventListener('mousedown', e => {
-                if (window.localStorage.getItem(`${control}-style`) != null) return
-                document.getElementById(control).style = `border-width: 0px`
-                if (fs != null) {fs()}
-            })
-            document.getElementById(control).addEventListener('mouseup', e => {
-                if (window.localStorage.getItem(`${control}-style`) != null) return
-                document.getElementById(control).style = `border-width: 4px`
-                if (fe != null) {fe()}
-            })
+            if (window.navigator.platform != "Win32") {
+                document.getElementById(control).addEventListener('touchstart', e => {
+                    if (window.localStorage.getItem(`${control}-style`) != null) return
+                    document.getElementById(command).style = `border-width: 0px`
+                    if (fs != null) {fs()}
+                })
+                document.getElementById(control).addEventListener('touchend', e => {
+                    if (window.localStorage.getItem(`${control}-style`) != null) return
+                    document.getElementById(control).style = `border-width: 4px`
+                    if (fe != null) {fe()}
+                })
+            } else {
+                document.getElementById(control).addEventListener('mousedown', e => {
+                    if (window.localStorage.getItem(`${control}-style`) != null) return
+                    document.getElementById(control).style = `border-width: 0px`
+                    if (fs != null) {fs()}
+                })
+                document.getElementById(control).addEventListener('mouseup', e => {
+                    if (window.localStorage.getItem(`${control}-style`) != null) return
+                    document.getElementById(control).style = `border-width: 4px`
+                    if (fe != null) {fe()}
+                })
+            }
         }
 
         let styles = {}
@@ -291,24 +357,7 @@
             setEnabled("start")
         })
         setDisabled("stop")
-
-        if (!!window.EventSource) {
-            var source = new EventSource('/events');
-
-            source.addEventListener('open', function(e) {
-                console.log("Events Connected")
-            }, false);
-
-            source.addEventListener('error', function(e) {
-                if (e.target.readyState != EventSource.OPEN) {
-                console.log("Events Disconnected")
-                }
-            }, false);
-
-            source.addEventListener('blocked', function(e) {
-                console.log("blocked: ", e.data)
-            }, false);
-        }
+    });
     </script>
 </body>
 </html>
