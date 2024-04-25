@@ -1,9 +1,16 @@
-#include <Arduino.h>
+#include "consts.h"
 
-#define IN1 16 
-#define IN2 17
-#define IN3 5
-#define IN4 18
+void setup_motors() {
+  pinMode(IN1, OUTPUT); // motors
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(ENA, OUTPUT);
+  pinMode(ENB, OUTPUT);
+
+  digitalWrite(ENA, HIGH);
+  digitalWrite(ENB, HIGH);
+}
 
 void right_move_forward() {
     digitalWrite(IN1, LOW);

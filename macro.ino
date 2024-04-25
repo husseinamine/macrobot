@@ -2,199 +2,109 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <SPIFFS.h>
-
-#include "upload.html.h"
+#include <ArduinoJson.h>
 
 #include "consts.h"
 #include "motor.h"
+#include "websockets.h"
+#include "upload.h"
 
 AsyncWebServer *server;
 AsyncWebSocket ws("/ws");
-// AsyncEventSource events("/events");
-
-float previousTime, currentTime, elapsedTime;
-
-void setupAdminUploadHandler() {
-  setupUpload();
-
-  server->on("/admin/upload", HTTP_GET, [](AsyncWebServerRequest * request) {
-    String logmessage = "Client:" + request->client()->remoteIP().toString() + + " " + request->url();
-    Serial.println(logmessage);
-    request->send_P(200, "text/html", upload_html, uploadProcessor);
-  });
-
-  server->on("/admin/handle_upload", HTTP_POST, [](AsyncWebServerRequest *request) {
-        request->send(200);
-  }, handleUpload);
-}
-
-void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
-  AwsFrameInfo *info = (AwsFrameInfo*)arg;
-  if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
-    data[len] = 0;
-
-    stop();
-    if (strcmp((char*)data, "forward") == 0) {
-      move_fwd();
-    } else if (strcmp((char*)data, "backward") == 0) {
-      move_bwd();
-    } else if (strcmp((char*)data, "turn-right") == 0) {
-      turn_right();
-    } else if (strcmp((char*)data, "turn-left") == 0) {
-      turn_left();
-    }
-  }
-}
-
-void eventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
-  switch (type) {
-    case WS_EVT_CONNECT:
-      Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
-      break;
-    case WS_EVT_DISCONNECT:
-      Serial.printf("WebSocket client #%u disconnected\n", client->id());
-      break;
-    case WS_EVT_DATA:
-      handleWebSocketMessage(arg, data, len);
-      break;
-    case WS_EVT_PONG:
-    case WS_EVT_ERROR:
-      break;
-  }
-}
+StaticJsonDocument<2048> macro;
+bool playingMacro = false;
 
 void setup() {
   Serial.begin(9600);
 
-  pinMode(IN1, OUTPUT); // motors
-  pinMode(IN2, OUTPUT);
-  pinMode(IN3, OUTPUT);
-  pinMode(IN4, OUTPUT);
+  setup_motors();
+
+  pinMode(22, OUTPUT);
+  pinMode(23, OUTPUT);
+  digitalWrite(22, HIGH);
+  digitalWrite(23, HIGH); //CAR LEEDDDDDDDDDDDDDDDDDDDDDS
 
   WiFi.softAP(ssid, password);
 
   server = new AsyncWebServer(port);
 
-  setupAdminUploadHandler();
+  setupAdmin(server);
 
   server->serveStatic("/", SPIFFS, "/").setDefaultFile("index.html"); 
 
   ws.onEvent(eventHandler);
   server->addHandler(&ws);
 
+  server->on("/playmacro", HTTP_POST, handleStartMacro);
   server->begin();
 }
 
 
 void loop() {
-  //gyroscope(or just changing one motor speed)-based straight line move adjustment / if blocked
-  //events.send("","blocked",millis()); 
+  playMacro();
+
+  digitalWrite(22, HIGH);
+  digitalWrite(23, HIGH); //CAR LEEDDDDDDDDDDDDDDDDDDDDDS
 }
 
-
-
-
-
-
-// ** UPLOADING FILES *
-void setupUpload() {
-  Serial.println("Booting ...");
-
-  Serial.println("Mounting SPIFFS ...");
-  if (!SPIFFS.begin(true)) {
-    Serial.println("ERROR: Cannot mount SPIFFS, Rebooting");
-    rebootESP("ERROR: Cannot mount SPIFFS, Rebooting");
+void handleStartMacro(AsyncWebServerRequest *request) {
+  if (playingMacro) {
+    request->send(500);
+    return;
   }
+  if (request->hasParam("macro", true)) {
+    AsyncWebParameter* macro_param = request->getParam("macro", true);
+    String macro_str = macro_param->value();
+    macro.clear();
+    DeserializationError error = deserializeJson(macro, macro_str);
 
-  Serial.print("SPIFFS Free: "); Serial.println(humanReadableSize((SPIFFS.totalBytes() - SPIFFS.usedBytes())));
-  Serial.print("SPIFFS Used: "); Serial.println(humanReadableSize(SPIFFS.usedBytes()));
-  Serial.print("SPIFFS Total: "); Serial.println(humanReadableSize(SPIFFS.totalBytes()));
-
-  Serial.println(listFiles(false));
-}
-
-void rebootESP(String message) {
-  Serial.print("Rebooting ESP32: "); Serial.println(message);
-  ESP.restart();
-}
-
-// list all of the files, if ishtml=true, return html rather than simple text
-String listFiles(bool ishtml) {
-  String returnText = "";
-  Serial.println("Listing files stored on SPIFFS");
-  File root = SPIFFS.open("/");
-  File foundfile = root.openNextFile();
-  if (ishtml) {
-    returnText += "<table><tr><th align='left'>Name</th><th align='left'>Size</th></tr>";
-  }
-  while (foundfile) {
-    if (ishtml) {
-      returnText += "<tr align='left'><td>" + String(foundfile.name()) + "</td><td>" + humanReadableSize(foundfile.size()) + "</td></tr>";
-    } else {
-      returnText += "File: " + String(foundfile.name()) + "\n";
+    if (error) {
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(error.f_str());
+      request->send(500);
+      return;
     }
-    foundfile = root.openNextFile();
+
+    playingMacro = true;
+    request->send(200);
+    return;
   }
-  if (ishtml) {
-    returnText += "</table>";
-  }
-  root.close();
-  foundfile.close();
-  return returnText;
+
+  request->send(500);
 }
 
-// Make size of files human readable
-// source: https://github.com/CelliesProjects/minimalUploadAuthESP32
-String humanReadableSize(const size_t bytes) {
-  if (bytes < 1024) return String(bytes) + " B";
-  else if (bytes < (1024 * 1024)) return String(bytes / 1024.0) + " KB";
-  else if (bytes < (1024 * 1024 * 1024)) return String(bytes / 1024.0 / 1024.0) + " MB";
-  else return String(bytes / 1024.0 / 1024.0 / 1024.0) + " GB";
-}
+void playMacro() {
+  if (playingMacro) {
+    JsonArray macro_arr = macro.as<JsonArray>();
 
-// handles uploads
-void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-  String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
-  Serial.println(logmessage);
+    for(JsonVariant step : macro_arr) {
+      if (step.is<JsonObject>()) {
+        JsonObject obj = step.as<JsonObject>();
 
-  if (!index) {
-    logmessage = "Upload Start: " + String(filename);
-    // open the file on first call and store the file handle in the request object
-    request->_tempFile = SPIFFS.open("/" + filename, "w");
-    Serial.println(logmessage);
+        const char* data = obj["command"];
+        int t = obj["t"];
+        
+        stop();
+        Serial.println(data);
+        Serial.println(t);
+        if (strcmp((char*)data, "forward") == 0) {
+          move_fwd();
+        } else if (strcmp((char*)data, "backward") == 0) {
+          move_bwd();
+        } else if (strcmp((char*)data, "turn-right") == 0) {
+          turn_right();
+        } else if (strcmp((char*)data, "turn-left") == 0) {
+          turn_left();
+        }
+
+        if (t < 100) {
+          delay(50);
+        }
+
+        delay(t);
+      }
+    }
+    stop();
+    playingMacro = false;
   }
-
-  if (len) {
-    // stream the incoming chunk to the opened file
-    request->_tempFile.write(data, len);
-    logmessage = "Writing file: " + String(filename) + " index=" + String(index) + " len=" + String(len);
-    Serial.println(logmessage);
-  }
-
-  if (final) {
-    logmessage = "Upload Complete: " + String(filename) + ",size: " + String(index + len);
-    // close the file handle as the upload is now done
-    request->_tempFile.close();
-    Serial.println(logmessage);
-    request->redirect("/admin/upload");
-  }
-}
-
-String uploadProcessor(const String& var) {
-  if (var == "FILELIST") {
-    return listFiles(true);
-  }
-  if (var == "FREESPIFFS") {
-    return humanReadableSize((SPIFFS.totalBytes() - SPIFFS.usedBytes()));
-  }
-
-  if (var == "USEDSPIFFS") {
-    return humanReadableSize(SPIFFS.usedBytes());
-  }
-
-  if (var == "TOTALSPIFFS") {
-    return humanReadableSize(SPIFFS.totalBytes());
-  }
-
-  return String();
 }

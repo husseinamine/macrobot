@@ -1,2 +1,2 @@
-# naqalbot
-naqal's source code (arab robots competition 2024)
+# macrobot
+macrobot's source code (arab robots competition 2024)

@@ -1,3 +1,5 @@
+void setup_motors();
+
 void right_move_forward();
 void right_move_backward();
 
