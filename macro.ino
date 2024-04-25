@@ -162,7 +162,7 @@ void eventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEvent
   }
 }
 
-
+//** TODO: READ MOTOR ENCODERS **//
 
 //** MOTORS **//
 void setup_motors() {
@@ -174,7 +174,7 @@ void setup_motors() {
   pinMode(ENB, OUTPUT);
 
   analogWrite(ENA, 200);
-  analogWrite(ENB, 255); // SET MOTOR SPEEDS
+  analogWrite(ENB, 255); // SET MOTOR SPEEDS (NOT WORKING PROPERLY.)
 }
 
 void right_move_forward() {
