@@ -173,8 +173,8 @@ void setup_motors() {
   pinMode(ENA, OUTPUT);
   pinMode(ENB, OUTPUT);
 
-  digitalWrite(ENA, HIGH);
-  digitalWrite(ENB, HIGH);
+  analogWrite(ENA, 200);
+  analogWrite(ENB, 255); // SET MOTOR SPEEDS
 }
 
 void right_move_forward() {
