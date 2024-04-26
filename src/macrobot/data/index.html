@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles.css" />
+    <title>MACROBOT</title>
+</head>
+<body>
+    <h1 class="title centered">MacroBot</h1>
+    <div class="arrows">
+        <!-- Up arrow -->
+        <button id="forward" class="up"><img src="/arrow.svg" unselectable="on" alt="Up" class="svg-icon rotate-up"></button>
+        <!-- Right arrow -->
+        <button id="turn-right" class="left"><img src="/arrow.svg" unselectable="on" alt="Right" class="svg-icon"></button>
+        <!-- Left arrow -->
+        <button id="turn-left" class="right"><img src="/arrow.svg" unselectable="on" alt="Left" class="svg-icon rotate-left"></button>
+        <!-- Down arrow -->
+        <button id="backward" class="down"><img src="/arrow.svg" unselectable="on" alt="Down" class="svg-icon rotate-down"></button>
+    </div>
+    <div class="centered controls">
+        <button id="start" class="control">START</button>
+        <button id="stop" class="control">STOP</button>
+    </div>
+    <div id="macros">
+    </div>
+    <script src="/main.js"></script>
+</body>
+</html>

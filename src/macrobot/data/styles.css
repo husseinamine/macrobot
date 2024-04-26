@@ -1,0 +1,185 @@
+@font-face {
+    font-family: introcond;
+    src: url(/introcond.otf);
+}
+
+body {
+    background-color:lightblue;
+    color: #000000;
+    font-family: introcond;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.centered {
+    margin: auto;
+    width: 50%;
+
+    text-align: center;
+}
+.arrows {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  row-gap: 50px;
+  column-gap: 0px;
+  justify-content: center;
+  align-items: center;
+  place-items: center;
+  margin-top: 20%;
+}
+
+/* arrows */
+.right {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.up {
+    grid-column: 2;
+    grid-row: 1;
+    align-items: center;
+}
+
+.left {
+    grid-column: 3;
+    grid-row: 2;
+    align-items: center;
+}
+
+.down {
+    grid-column: 2;
+    grid-row: 3;
+    align-items: center;
+}
+
+.center {
+    grid-column: 2;
+    grid-row: 2;
+    align-items: center;
+}
+
+/* Style for the arrows */
+.svg-icon {
+    padding: 5px;
+    background-color: rgb(255, 255, 255);
+    width: 100%; 
+    height: auto; 
+    max-width: 50px;
+    max-height: 50px;
+    border-radius: 14px;
+}
+
+/* Rotate arrows as needed */
+.rotate-up {
+    transform: rotate(-90deg);
+}
+
+.rotate-down {
+    transform: rotate(90deg);
+}
+
+.rotate-left {
+    transform: rotate(180deg);
+}
+
+button {
+    background-color: #1d46cb71;
+    border-style: none;
+    border-radius: 12.5px;
+    padding: 4px;
+}
+
+.controls {
+    margin-top: 50px;
+    justify-content: center;
+    align-items: center;
+    place-items: center;
+}
+
+.control {
+    padding: 5px 15px;
+    border-radius: 8px;
+    font-size: larger;
+    font-weight: bold;
+    border-style: solid;
+    border-width: 4px;
+    border-color: rgba(240, 248, 255, 0.4);
+}
+
+#start {
+    background-color: rgb(76, 221, 32);
+    color: whitesmoke;
+    margin-right: 20px;
+}
+
+#stop {
+    background-color: rgb(221, 32, 32);
+    color: whitesmoke;
+    margin-left: 20px;
+}
+
+#macros {
+    margin-top: 35px;
+}
+
+.macro {
+    height: 100px;
+    background-color: rgba(0, 0, 0, 0.472);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.macro-start {
+    font-weight: bold;
+    padding: 9px 9px;
+    border-radius: 8px;
+    border-style: solid;
+    border-width: 4px;
+    margin-left: 10px;
+    border-color: rgba(240, 248, 255, 0.4);
+    background-color: rgb(76, 221, 32);
+    color: whitesmoke;
+
+}
+
+.macro-del {
+    font-weight: bold;
+    padding: 9px 9px;
+    border-radius: 8px;
+    border-style: solid;
+    border-width: 4px;
+    margin-left: 10px;
+    border-color: rgba(240, 248, 255, 0.4);
+    background-color: rgb(221, 32, 32);
+    color: whitesmoke;
+}
+
+@media only screen and (max-width: 600px) {
+    .centered {
+        width: 80%;
+    }
+}
+
+@media only screen and (min-width: 600px) {
+    .arrows {
+        margin-top: 5%;
+        margin-right: 20%;
+        margin-left: 20%;
+    }
+}
+
+@media only screen and (min-width: 1000px) {
+    .arrows {
+        margin-right: 35%;
+        margin-left: 35%;
+    }
+}
+
+img {
+    pointer-events: none; 
+}
