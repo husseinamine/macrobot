@@ -5,7 +5,7 @@
 `macro` in this context refers to a computer macro which is a series of commands and actions that can be stored and run whenever you need to perform a computer task. Whereas `bot` is a term widely used as a synonym to `robot`. Together we get the term `macrobot`.
 
 ## Hardware
-![](about/public/macrobot.png)
+![](docs/public/macrobot.png)
 <ul>
   <li><b>ESP32 Devboard</b> the microcontroller in charge of controlling everything related to the robot and applying software inputs to the hardware.</li>
   <li><b>L298N dual motor driver</b> communicates with the microcontroller to move the motors.</li>
