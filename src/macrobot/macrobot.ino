@@ -5,7 +5,7 @@
 #include <ArduinoJson.h>
 
 #include "consts.h"
-#include "data/upload.html.h"
+#include "web/upload.html.h"
 
 
 
